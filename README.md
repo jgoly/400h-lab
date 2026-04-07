@@ -48,11 +48,6 @@ Usage
 
 No installation necessary. Open in any modern browser and begin analysing immediately.
 
-Run locally
-open index.html
-
-Or drag index.html into your browser.
-
 Contributing
 
 Bug reports, suggestions, and pull requests are welcome.
