@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>400m Hurdle Touchdown Calculator</title>
+<meta name="description" content="Professional 400m hurdles touchdown time calculator for coaches and athletes. Enter splits to get projected finish, velocity profile, 100m sectional splits and pace guide. Covers men 45–70s and women 49–80s."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #0f1117;
+  --surface:   #181c27;
+  --surface2:  #1f2435;
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.14);
+  --text:      #e8eaf0;
+  --text2:     #8b90a0;
+  --text3:     #555c72;
+  --accent:    #4ade80;
+  --accent-d:  #16a34a;
+  --danger:    #f87171;
+  --danger-d:  #dc2626;
+  --info:      #60a5fa;
+  --info-d:    #2563eb;
+  --warn:      #fbbf24;
+  --warn-d:    #d97706;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --radius:    10px;
+  --radius-lg: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;}
+body{min-height:100vh;padding-bottom:4rem;}
+
+/* ── Header ── */
+.site-header{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:1rem 1.5rem;
+  display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:10;
+}
+.logo{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent-d),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.site-header h1{font-size:16px;font-weight:500;color:var(--text);}
+.site-header p{font-size:12px;color:var(--text2);}
+.header-badge{
+  margin-left:auto;font-size:11px;font-family:var(--mono);
+  color:var(--accent);background:rgba(74,222,128,0.1);
+  border:1px solid rgba(74,222,128,0.25);
+  padding:3px 10px;border-radius:20px;white-space:nowrap;
+}
+
+/* ── Layout ── */
+.container{max-width:980px;margin:0 auto;padding:1.5rem 1.25rem;}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;gap:0;}
+.tab-btn{
+  padding:10px 22px;font-size:13px;font-weight:500;
+  background:transparent;border:none;border-bottom:2px solid transparent;
+  cursor:pointer;color:var(--text2);margin-bottom:-1px;
+  transition:all 0.15s;font-family:var(--sans);
+}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover:not(.active){color:var(--text);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+
+/* ── Controls ── */
+.controls-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:1.25rem;}
+.gender-toggle{display:flex;border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;}
+.gender-btn{
+  padding:8px 20px;font-size:13px;font-weight:500;
+  background:transparent;border:none;cursor:pointer;
+  color:var(--text2);transition:all 0.15s;font-family:var(--sans);
+}
+.gender-btn.active{background:var(--accent);color:#0a1a0f;font-weight:600;}
+.target-group{display:flex;align-items:center;gap:8px;}
+.target-group label{font-size:13px;color:var(--text2);white-space:nowrap;}
+.tfield{
+  width:84px;text-align:center;font-size:14px;padding:7px 8px;
+  border:1px solid var(--border2);border-radius:var(--radius);
+  background:var(--surface2);color:var(--text);
+  font-family:var(--mono);outline:none;
+  transition:border-color 0.15s;
+}
+.tfield:focus{border-color:var(--accent);}
+.action-btns{display:flex;gap:8px;margin-left:auto;}
+.btn{
+  padding:8px 16px;font-size:13px;font-weight:500;
+  border:1px solid var(--border2);border-radius:var(--radius);
+  cursor:pointer;background:transparent;color:var(--text);
+  font-family:var(--sans);transition:all 0.15s;
+}
+.btn:hover{background:var(--surface2);border-color:var(--border2);}
+.btn.primary{background:var(--accent);color:#0a1a0f;border-color:var(--accent);font-weight:600;}
+.btn.primary:hover{background:#22c55e;}
+.btn.danger{color:var(--danger);border-color:rgba(248,113,113,0.3);}
+.btn.danger:hover{background:rgba(248,113,113,0.1);}
+
+/* ── Stride disclosure ── */
+.stride-disclosure{margin-bottom:1.25rem;}
+.stride-disclosure summary{
+  font-size:12px;color:var(--text3);cursor:pointer;
+  padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;
+  user-select:none;
+}
+.stride-disclosure summary::-webkit-details-marker{display:none;}
+.stride-disclosure summary::before{content:'▶';font-size:9px;transition:transform 0.15s;}
+.stride-disclosure[open] summary::before{transform:rotate(90deg);}
+.stride-inputs{display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:0.6rem 0 0.25rem;}
+.stride-inputs span{font-size:11px;color:var(--text3);min-width:22px;text-align:center;}
+.stride-inputs input{
+  width:34px;text-align:center;font-size:12px;padding:4px 2px;
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--surface2);color:var(--text);
+  font-family:var(--mono);outline:none;
+}
+.stride-inputs input:focus{border-color:var(--accent);}
+
+/* ── Banners ── */
+.banner{border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;display:none;}
+.banner.info{background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.3);color:var(--info);}
+.banner.warn{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:var(--warn);}
+
+/* ── Summary cards ── */
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;}
+.mcard .ml{font-size:10px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.08em;font-weight:500;}
+.mcard .mv{font-size:22px;font-weight:500;color:var(--text);font-family:var(--mono);}
+.mcard .ms{font-size:11px;margin-top:3px;color:var(--text2);}
+
+/* ── Main grid ── */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;}
+.panel-title{
+  font-size:10px;font-weight:500;color:var(--text3);
+  margin-bottom:0.85rem;text-transform:uppercase;letter-spacing:0.1em;
+}
+
+/* ── Tables ── */
+.td-table{width:100%;border-collapse:collapse;}
+.td-table th{
+  font-size:10px;color:var(--text3);font-weight:500;
+  padding:4px 5px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.td-table th:first-child{text-align:left;}
+.td-table td{padding:4px 5px;text-align:center;vertical-align:middle;}
+.td-table tr:hover td{background:var(--surface2);}
+.td-table input{
+  width:64px;text-align:center;font-size:13px;padding:5px 4px;
+  border:1px solid var(--border);border-radius:7px;
+  background:var(--surface2);color:var(--text);
+  font-family:var(--mono);outline:none;transition:border-color 0.15s;
+}
+.td-table input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(74,222,128,0.15);}
+.td-table input::placeholder{color:var(--text3);}
+.hlabel{font-size:13px;font-weight:500;color:var(--text);}
+
+/* ── Delta badges ── */
+.delta{font-size:11px;font-family:var(--mono);font-weight:500;padding:2px 5px;border-radius:5px;}
+.delta.fast{background:rgba(74,222,128,0.15);color:#4ade80;}
+.delta.slow{background:rgba(248,113,113,0.15);color:#f87171;}
+.delta.neutral{color:var(--text3);}
+.ival{font-size:12px;font-family:var(--mono);color:var(--text2);}
+.cpval{font-size:12px;font-family:var(--mono);color:var(--info);font-weight:500;}
+
+/* ── Chart panel ── */
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;margin-bottom:1.25rem;}
+.chart-legend{display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--text2);}
+.chart-legend span{display:flex;align-items:center;gap:6px;}
+.leg-line{display:inline-block;width:22px;height:2px;}
+
+/* ── Splits grid ── */
+.splits-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;margin-bottom:1.25rem;}
+.splits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.scard{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.scard .sl{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;}
+.scard .sv{font-size:17px;font-weight:500;color:var(--text);font-family:var(--mono);}
+.scard .dbadge{display:inline-block;font-size:11px;font-family:var(--mono);font-weight:500;padding:1px 6px;border-radius:4px;margin-top:4px;}
+.scard .sc{font-size:11px;color:var(--text2);margin-top:3px;}
+
+/* ── Saves ── */
+.saves-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;}
+.saves-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+.save-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);cursor:pointer;transition:border-color 0.15s;
+}
+.save-item:hover{border-color:var(--border2);}
+.save-item .sn{font-size:13px;font-weight:500;color:var(--text);flex:1;}
+.save-item .sm{font-size:11px;color:var(--text3);}
+.save-item .st{font-size:13px;font-family:var(--mono);color:var(--text2);}
+.save-item .db{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;font-family:var(--sans);}
+.save-item .db:hover{background:rgba(248,113,113,0.15);}
+.empty-saves{font-size:13px;color:var(--text3);text-align:center;padding:1.25rem;}
+.save-form{display:flex;gap:8px;margin-bottom:0.85rem;}
+.save-form input{
+  flex:1;font-size:13px;padding:7px 10px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface2);color:var(--text);
+  font-family:var(--sans);outline:none;
+}
+.save-form input:focus{border-color:var(--accent);}
+.save-form input::placeholder{color:var(--text3);}
+
+/* ── Pace guide ── */
+.pg-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;margin-bottom:1.25rem;}
+.pace-table{width:100%;border-collapse:collapse;}
+.pace-table th{font-size:10px;color:var(--text3);font-weight:500;padding:5px 8px;text-align:center;border-bottom:1px solid var(--border);}
+.pace-table th:first-child{text-align:left;}
+.pace-table td{font-size:13px;font-family:var(--mono);padding:6px 8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);}
+.pace-table td:first-child{font-family:var(--sans);font-weight:500;font-size:13px;color:var(--text2);}
+.pace-table tr.cprow{background:rgba(96,165,250,0.08);}
+.pace-table tr.cprow td{color:var(--info);}
+.pace-table tr.cprow td:first-child{color:var(--info);font-weight:600;}
+.pace-table tr.finrow td{border-top:1px solid var(--border2);font-weight:500;color:var(--text);}
+.pace-table tr:last-child td{border-bottom:none;}
+
+/* ── Footer ── */
+.site-footer{
+  text-align:center;margin-top:3rem;padding:1.5rem;
+  font-size:11px;color:var(--text3);
+  border-top:1px solid var(--border);
+}
+.site-footer a{color:var(--text2);text-decoration:none;}
+
+/* ── Responsive ── */
+@media(max-width:700px){
+  .main-grid{grid-template-columns:1fr;}
+  .summary-row{grid-template-columns:repeat(2,1fr);}
+  .splits-grid{grid-template-columns:repeat(2,1fr);}
+  .action-btns{margin-left:0;}
+  .site-header h1{font-size:14px;}
+  .header-badge{display:none;}
+}
+@media(max-width:480px){
+  .summary-row{grid-template-columns:repeat(2,1fr);}
+  .controls-row{gap:8px;}
+  .container{padding:1rem 0.85rem;}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">⏱</div>
+  <div>
+    <h1>400m Hurdle Calculator</h1>
+    <p>Touchdown splits · Velocity profile · Pace guide</p>
+  </div>
+  <span class="header-badge">Men 45–70s · Women 49–80s</span>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('calc')">Calculator</button>
+    <button class="tab-btn" onclick="switchTab('pace')">Pace guide</button>
+  </div>
+
+  <!-- ═══ CALCULATOR TAB ═══ -->
+  <div id="tab-calc" class="tab-content active">
+
+    <div class="controls-row">
+      <div class="gender-toggle">
+        <button class="gender-btn active" id="btn-m" onclick="setGender('M')">Men</button>
+        <button class="gender-btn" id="btn-w" onclick="setGender('W')">Women</button>
+      </div>
+      <div class="target-group">
+        <label>Target</label>
+        <input type="text" inputmode="decimal" class="tfield" id="target-input" value="48.00" oninput="recalc()"/>
+      </div>
+      <div class="action-btns">
+        <button class="btn danger" onclick="clearAll()">Clear</button>
+        <button class="btn primary" onclick="document.getElementById('save-name').focus()">Save run</button>
+      </div>
+    </div>
+
+    <div id="warn-banner" class="banner warn"></div>
+    <div id="partial-banner" class="banner info"></div>
+
+    <div class="summary-row">
+      <div class="mcard"><div class="ml">Finish time</div><div class="mv" id="sum-finish">—</div><div class="ms" id="sum-finish-d">Enter splits</div></div>
+      <div class="mcard"><div class="ml">1st 200m</div><div class="mv" id="sum-200a">—</div><div class="ms" id="sum-200a-d">—</div></div>
+      <div class="mcard"><div class="ml">2nd 200m</div><div class="mv" id="sum-200b">—</div><div class="ms" id="sum-200b-d">—</div></div>
+      <div class="mcard"><div class="ml">Differential</div><div class="mv" id="sum-diff">—</div><div class="ms" id="sum-diff-s"></div></div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-title">Touchdown times (cumulative)</div>
+        <table class="td-table">
+          <thead><tr>
+            <th style="text-align:left">Hurdle</th>
+            <th>Cumulative</th>
+            <th>Interval</th>
+            <th>vs target</th>
+            <th>Split</th>
+          </tr></thead>
+          <tbody id="td-body"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Target splits — <span id="tgt-label">48.00</span></div>
+        <table class="td-table">
+          <thead><tr>
+            <th style="text-align:left">Hurdle</th>
+            <th>Cumulative</th>
+            <th>Interval</th>
+            <th>Split</th>
+          </tr></thead>
+          <tbody id="target-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <details class="stride-disclosure">
+      <summary>Stride pattern (optional)</summary>
+      <div class="stride-inputs" id="stride-inputs"></div>
+    </details>
+
+    <div class="chart-panel">
+      <div class="panel-title">Velocity profile (m/s)</div>
+      <div class="chart-legend">
+        <span><i class="leg-line" style="background:#4ade80"></i>Actual</span>
+        <span><i class="leg-line" style="background:#555c72;"></i>Target</span>
+      </div>
+      <div style="position:relative;width:100%;height:220px;"><canvas id="vel-chart"></canvas></div>
+    </div>
+
+    <div class="splits-panel">
+      <div class="panel-title">100m sectional splits</div>
+      <div class="splits-grid" id="splits-grid"></div>
+    </div>
+
+    <div class="saves-panel">
+      <div class="panel-title">Saved runs</div>
+      <div class="save-form">
+        <input type="text" id="save-name" placeholder="Run name (e.g. Heat 1 – 12 Jun)"/>
+        <button class="btn primary" onclick="saveRun()">Save</button>
+      </div>
+      <div class="saves-list" id="saves-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PACE GUIDE TAB ═══ -->
+  <div id="tab-pace" class="tab-content">
+    <div class="controls-row">
+      <div class="gender-toggle">
+        <button class="gender-btn active" id="pg-btn-m" onclick="setPgGender('M')">Men</button>
+        <button class="gender-btn" id="pg-btn-w" onclick="setPgGender('W')">Women</button>
+      </div>
+      <div class="target-group">
+        <label>Target time</label>
+        <input type="text" inputmode="decimal" class="tfield" id="pg-target" value="48.00" oninput="buildPaceGuide()"/>
+      </div>
+    </div>
+    <div class="pg-panel">
+      <div class="panel-title">Splits required for <span id="pg-label">48.00</span></div>
+      <table class="pace-table">
+        <thead><tr><th style="text-align:left">Point</th><th>Cumulative</th><th>Interval</th><th>Change</th></tr></thead>
+        <tbody id="pace-body"></tbody>
+      </table>
+    </div>
+    <div class="pg-panel">
+      <div class="panel-title">Velocity profile</div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="pg-chart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  Built for coaches and athletes &middot; Pacing data derived from SpeedEndurance.com &amp; IAAF biomechanical studies &middot;
+  Men 45–70s · Women 49–80s
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+'use strict';
+let gender='M', pgGender='M';
+let velChart=null, pgChart=null;
+let saves=[];
+const SAVE_KEY='hurdleSaves';
+try{
+  for(const k of['hurdleSaves11','hurdleSaves10','hurdleSaves9','hurdleSaves8','hurdleSaves7']){
+    const old=localStorage.getItem(k);if(old&&!localStorage.getItem(SAVE_KEY)){localStorage.setItem(SAVE_KEY,old);}
+  }
+  saves=JSON.parse(localStorage.getItem(SAVE_KEY)||'[]');
+}catch(e){saves=[];}
+
+// ── Ratio models [base_ratio, drift_per_second] ──
+// Cols: H1, H2, H3, H4, H5, 200m_checkpoint, H6, H7, H8, H9, H10
+// h-array: h[0..4]=H1..H5 → model[0..4]
+//          h[5..9]=H6..H10 → model[6..10]  (model[5] = 200m cp, not in h)
+// H1 ratio corrected from real race biomechanics data
+// (SpeedEndurance table records H1 clearance time, not touchdown)
+const MEN_MODELS=[
+  [0.12371,-0.000234], // H1  ← corrected from Berlin 2009 + London DL 2017 race data
+  [0.20125,-0.000108], // H2
+  [0.28161, 0.000663], // H3
+  [0.36400, 0.001048], // H4
+  [0.44649, 0.000423], // H5
+  [0.48016, 0.000394], // 200m checkpoint
+  [0.53211, 0.000677], // H6
+  [0.61691, 0.001660], // H7
+  [0.70456, 0.001358], // H8
+  [0.79838, 0.001251], // H9
+  [0.89319, 0.001251], // H10
+];
+const MEN_MID=50.5;
+
+const WOMEN_MODELS=[
+  [0.11983,-0.000270], // H1  ← corrected proportionally
+  [0.19804,-0.000054], // H2
+  [0.28050, 0.000162], // H3
+  [0.36274, 0.000235], // H4
+  [0.44474, 0.000334], // H5
+  [0.48519, 0.000118], // 200m checkpoint
+  [0.53215, 0.000403], // H6
+  [0.61911, 0.000384], // H7
+  [0.70782, 0.000206], // H8
+  [0.79877, 0.000003], // H9
+  [0.89167,-0.000151], // H10
+];
+const WOMEN_MID=58.0;
+
+const BOUNDS={M:{min:45,max:70},W:{min:49,max:80}};
+
+function modelIdx(hIdx){return hIdx<5?hIdx:hIdx+1;}
+function getModels(){return gender==='M'?MEN_MODELS:WOMEN_MODELS;}
+function getMid(){return gender==='M'?MEN_MID:WOMEN_MID;}
+function getPgModels(){return pgGender==='M'?MEN_MODELS:WOMEN_MODELS;}
+function getPgMid(){return pgGender==='M'?MEN_MID:WOMEN_MID;}
+function getBounds(g){return g==='M'?BOUNDS.M:BOUNDS.W;}
+
+function genSplits(target,models,mid){
+  const vals=models.map(m=>parseFloat(((m[0]+m[1]*(target-mid))*target).toFixed(2)));
+  const h=[vals[0],vals[1],vals[2],vals[3],vals[4],vals[6],vals[7],vals[8],vals[9],vals[10]];
+  return{h,t200:vals[5]};
+}
+
+function hurdleDist(i){return 45+i*35;}
+function segDist(i){return i===0?45:i===10?40:35;}
+
+function buildVels(times){
+  const vels=[];let prevT=0;
+  for(let i=0;i<times.length;i++){
+    const t=times[i];
+    if(t==null||t<=prevT){vels.push(null);continue;}
+    vels.push(parseFloat((segDist(i)/(t-prevT)).toFixed(3)));
+    prevT=t;
+  }
+  return vels;
+}
+
+function calcCP(h){
+  let t100=null,t200=null,t300=null;
+  if(h[1]!=null&&h[2]!=null&&h[2]>h[1]){const v=35/(h[2]-h[1]);t100=h[1]+20/v;}
+  if(h[4]!=null&&h[5]!=null&&h[5]>h[4]){const v=35/(h[5]-h[4]);t200=h[4]+15/v;}
+  if(h[7]!=null&&h[8]!=null&&h[8]>h[7]){const v=35/(h[8]-h[7]);t300=h[7]+10/v;}
+  return{t100,t200,t300};
+}
+
+// Ratio-model projection — solves the quadratic:
+// t_i = (base + drift*(finish - mid)) * finish
+// H1 projection suppressed (too unreliable regardless of ratio)
+const PROJ_MIN_HURDLE=1;
+
+function projectFromHurdle(t_i,hIdx,models,mid){
+  const mi=modelIdx(hIdx);
+  const base=models[mi][0],drift=models[mi][1];
+  if(Math.abs(drift)<1e-9)return t_i/base;
+  const a=drift,b=base-drift*mid,c=-t_i;
+  const disc=b*b-4*a*c;
+  if(disc<0)return t_i/base;
+  return(-b+Math.sqrt(disc))/(2*a);
+}
+
+function projectFinish(inputs,finishVal,models,mid){
+  if(finishVal!=null)return{val:finishVal,isProj:false,basedOn:-1};
+  let lc=-1;
+  for(let i=0;i<10;i++){if(inputs[i]!=null)lc=i;else break;}
+  if(lc<PROJ_MIN_HURDLE)return{val:null,isProj:false,basedOn:-1};
+  return{val:parseFloat(projectFromHurdle(inputs[lc],lc,models,mid).toFixed(2)),isProj:true,basedOn:lc+1};
+}
+
+function lastContiguous(inputs){
+  let last=-1;
+  for(let i=0;i<10;i++){if(inputs[i]!=null)last=i;else break;}
+  return last;
+}
+
+function getDefaults(g){
+  return g==='M'
+    ?{target:48.00,strides:[22,13,13,13,13,13,14,14,15,15]}
+    :{target:54.00,strides:[22,17,17,17,17,17,18,19,20,21]};
+}
+
+function setGender(g){
+  gender=g;
+  document.getElementById('btn-m').classList.toggle('active',g==='M');
+  document.getElementById('btn-w').classList.toggle('active',g==='W');
+  const d=getDefaults(g);
+  document.getElementById('target-input').value=d.target.toFixed(2);
+  buildStrideInputs(d.strides);
+  if(velChart){velChart.destroy();velChart=null;}
+  fullRebuild();
+}
+function setPgGender(g){
+  pgGender=g;
+  document.getElementById('pg-btn-m').classList.toggle('active',g==='M');
+  document.getElementById('pg-btn-w').classList.toggle('active',g==='W');
+  if(pgChart){pgChart.destroy();pgChart=null;}
+  buildPaceGuide();
+}
+
+function buildStrideInputs(strides){
+  const c=document.getElementById('stride-inputs');c.innerHTML='';
+  for(let i=0;i<10;i++){
+    const sp=document.createElement('span');sp.textContent='H'+(i+1);
+    const inp=document.createElement('input');
+    inp.type='text';inp.inputMode='decimal';inp.value=strides[i];inp.id='stride-'+i;inp.oninput=recalc;
+    c.appendChild(sp);c.appendChild(inp);
+  }
+}
+function getStrides(){return Array.from({length:10},(_,i)=>{const v=parseFloat(document.getElementById('stride-'+i)?.value);return isNaN(v)?getDefaults(gender).strides[i]:v;});}
+
+function getTarget(){
+  const v=parseFloat(document.getElementById('target-input')?.value);
+  if(isNaN(v))return getDefaults(gender).target;
+  const b=getBounds(gender);
+  return Math.max(b.min-5,Math.min(b.max+5,v));
+}
+function getPgTarget(){
+  const v=parseFloat(document.getElementById('pg-target')?.value);
+  if(isNaN(v))return 48.0;
+  const b=getBounds(pgGender);
+  return Math.max(b.min-5,Math.min(b.max+5,v));
+}
+function getInputs(){
+  return Array.from({length:10},(_,i)=>{
+    const el=document.getElementById('td-'+i);
+    if(!el||el.value.trim()==='')return null;
+    const v=parseFloat(el.value);return isNaN(v)?null:v;
+  });
+}
+function getFinish(){
+  const el=document.getElementById('td-finish');
+  if(!el||el.value.trim()==='')return null;
+  const v=parseFloat(el.value);return isNaN(v)?null:v;
+}
+
+function buildTDBody(tsplits,target){
+  const tbody=document.getElementById('td-body');
+  const sv=Array.from({length:10},(_,i)=>document.getElementById('td-'+i)?.value||'');
+  const sf=document.getElementById('td-finish')?.value||'';
+  tbody.innerHTML='';
+  const cpNames={1:'100m',4:'200m',7:'300m'};
+  for(let i=0;i<10;i++){
+    const hasCp=cpNames[i]!==undefined;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="hlabel">H${i+1}</span></td><td><input type="text" inputmode="decimal" id="td-${i}" value="${sv[i]}" placeholder="${tsplits[i].toFixed(2)}"/></td><td><span class="ival" id="int-${i}">—</span></td><td><span class="delta neutral" id="dlt-${i}">—</span></td><td><span class="${hasCp?'cpval':'ival'}" id="cp-${i}">${hasCp?cpNames[i]+' →':'—'}</span></td>`;
+    tbody.appendChild(tr);
+  }
+  const fr=document.createElement('tr');
+  fr.style.borderTop='1px solid rgba(255,255,255,0.08)';
+  fr.innerHTML=`<td><span class="hlabel" style="font-weight:600">Finish</span></td><td><input type="text" inputmode="decimal" id="td-finish" value="${sf}" placeholder="${target.toFixed(2)}"/></td><td><span class="ival" id="int-finish">—</span></td><td><span class="delta neutral" id="dlt-finish">—</span></td><td></td>`;
+  tbody.appendChild(fr);
+  for(let i=0;i<10;i++)document.getElementById('td-'+i).addEventListener('input',recalc);
+  document.getElementById('td-finish').addEventListener('input',recalc);
+}
+
+function buildTargetBody(data,target){
+  document.getElementById('tgt-label').textContent=target.toFixed(2);
+  const tbody=document.getElementById('target-body');tbody.innerHTML='';
+  const{h}=data;
+  const cp=calcCP(h);
+  const cpMap={1:cp.t100,4:cp.t200,7:cp.t300};
+  const cpNames={1:'100m',4:'200m',7:'300m'};
+  for(let i=0;i<10;i++){
+    const interval=i===0?h[0]:h[i]-h[i-1];
+    const cpStr=cpMap[i]!=null?(cpNames[i]+': '+cpMap[i].toFixed(2)):'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="hlabel">H${i+1}</span></td><td>${h[i].toFixed(2)}</td><td>${interval.toFixed(2)}</td><td><span class="${cpStr?'cpval':'ival'}">${cpStr||'—'}</span></td>`;
+    tbody.appendChild(tr);
+  }
+  const fr=document.createElement('tr');
+  fr.style.borderTop='1px solid rgba(255,255,255,0.08)';
+  fr.innerHTML=`<td><span class="hlabel" style="font-weight:600">Finish</span></td><td>${target.toFixed(2)}</td><td>${(target-h[9]).toFixed(2)}</td><td></td>`;
+  tbody.appendChild(fr);
+}
+
+function recalc(){
+  const target=getTarget();
+  const models=getModels(),mid=getMid();
+  const data=genSplits(target,models,mid);
+  const{h:tsplits,t200:tgt200}=data;
+  const inputs=getInputs();
+  const finishVal=getFinish();
+  const lc=lastContiguous(inputs);
+
+  const finEl=document.getElementById('td-finish');
+  if(finEl&&finEl.value.trim()==='')finEl.placeholder=target.toFixed(2);
+
+  buildTargetBody(data,target);
+
+  // Validation
+  const wb=document.getElementById('warn-banner');
+  let warnMsg='';
+  const b=getBounds(gender);
+  const rawT=parseFloat(document.getElementById('target-input')?.value);
+  if(!isNaN(rawT)&&(rawT<b.min||rawT>b.max))
+    warnMsg=`Target ${rawT.toFixed(2)}s is outside the calibrated range (${b.min}–${b.max}s) — splits are extrapolated.`;
+  for(let i=1;i<10&&!warnMsg;i++){
+    if(inputs[i]!=null&&inputs[i-1]!=null&&inputs[i]<=inputs[i-1])
+      warnMsg=`H${i+1} (${inputs[i].toFixed(2)}) must be greater than H${i} (${inputs[i-1].toFixed(2)}) — check entry.`;
+  }
+  if(!warnMsg&&finishVal!=null&&inputs[9]!=null&&finishVal<=inputs[9])
+    warnMsg=`Finish (${finishVal.toFixed(2)}) must be greater than H10 (${inputs[9].toFixed(2)}).`;
+  wb.style.display=warnMsg?'block':'none';
+  wb.textContent=warnMsg;
+
+  for(let i=0;i<10;i++){
+    const iEl=document.getElementById('int-'+i);
+    const dEl=document.getElementById('dlt-'+i);
+    if(!iEl||!dEl)continue;
+    const v=inputs[i];
+    if(v!=null){
+      const pv=i===0?0:inputs[i-1];
+      iEl.textContent=(i===0||pv!=null)?(v-(i===0?0:pv)).toFixed(2):'—';
+      const diff=v-tsplits[i];
+      dEl.textContent=(diff>=0?'+':'')+diff.toFixed(2);
+      dEl.className='delta '+(diff<-0.05?'fast':diff>0.05?'slow':'neutral');
+    }else{iEl.textContent='—';dEl.textContent='—';dEl.className='delta neutral';}
+  }
+
+  const acp=calcCP(inputs);
+  const acpMap={1:acp.t100,4:acp.t200,7:acp.t300};
+  const acpNames={1:'100m',4:'200m',7:'300m'};
+  for(let i=0;i<10;i++){
+    const el=document.getElementById('cp-'+i);if(!el)continue;
+    if(acpMap[i]!=null){el.textContent=acpNames[i]+': '+acpMap[i].toFixed(2);el.className='cpval';}
+    else if([1,4,7].includes(i)){el.textContent=acpNames[i]+' →';el.className='ival';}
+    else{el.textContent='—';el.className='ival';}
+  }
+
+  const iF=document.getElementById('int-finish'),dF=document.getElementById('dlt-finish');
+  if(iF&&finishVal!=null&&inputs[9]!=null&&finishVal>inputs[9]){
+    iF.textContent=(finishVal-inputs[9]).toFixed(2);
+    const diff=finishVal-target;
+    dF.textContent=(diff>=0?'+':'')+diff.toFixed(2);
+    dF.className='delta '+(diff<-0.05?'fast':diff>0.05?'slow':'neutral');
+  }else if(iF){iF.textContent='—';dF.textContent='—';dF.className='delta neutral';}
+
+  const{val:projFinish,isProj,basedOn}=projectFinish(inputs,finishVal,models,mid);
+
+  const pb=document.getElementById('partial-banner');
+  if(lc>=0&&!finishVal){
+    pb.style.display='block';
+    if(lc===0){pb.innerHTML='H1 entered. Projection available from H2 onward.';}
+    else{pb.innerHTML=`${lc<9?`Partial run — ${lc+1}/10 hurdles. `:''}Projected finish from H${basedOn}: <strong>${projFinish!=null?projFinish.toFixed(2)+'s':'—'}</strong>`;}
+  }else{pb.style.display='none';}
+
+  updateSummary(inputs,tsplits,target,tgt200,finishVal,projFinish,isProj,acp);
+  updateSplits(inputs,tsplits,target,tgt200,finishVal,projFinish,acp);
+  updateVelChart(inputs,tsplits,target,finishVal);
+}
+
+function colourSub(el,val){
+  if(!el)return;
+  el.style.color=val<0?'#4ade80':val>0.01?'#f87171':'#8b90a0';
+}
+
+function updateSummary(inputs,tsplits,target,tgt200,finishVal,projFinish,isProj,acp){
+  const ef=document.getElementById('sum-finish'),efd=document.getElementById('sum-finish-d');
+  if(projFinish!=null){
+    ef.textContent=projFinish.toFixed(2)+(isProj?'*':'');
+    const d=projFinish-target;
+    efd.textContent=(d>=0?'+':'')+d.toFixed(2)+' vs target';
+    colourSub(efd,d);
+  }else{ef.textContent='—';efd.textContent=lastContiguous(inputs)===0?'Enter H2+':'Enter splits';efd.style.color='';}
+
+  const tCP=calcCP(tsplits);
+  const actual200=acp.t200;
+  const target200=tCP.t200!=null?tCP.t200:tgt200;
+
+  const e200a=document.getElementById('sum-200a'),e200ad=document.getElementById('sum-200a-d');
+  if(actual200!=null){
+    e200a.textContent=actual200.toFixed(2);
+    const d=actual200-target200;
+    e200ad.textContent=(d>=0?'+':'')+d.toFixed(2)+' vs target';
+    colourSub(e200ad,d);
+  }else{e200a.textContent='—';e200ad.textContent='target: '+target200.toFixed(2);e200ad.style.color='';}
+
+  const e200b=document.getElementById('sum-200b'),e200bd=document.getElementById('sum-200b-d');
+  if(actual200!=null&&projFinish!=null){
+    const s2=projFinish-actual200;
+    e200b.textContent=s2.toFixed(2);
+    const d=s2-(target-target200);
+    e200bd.textContent=(d>=0?'+':'')+d.toFixed(2)+' vs target';
+    colourSub(e200bd,d);
+  }else{e200b.textContent='—';e200bd.textContent='';e200bd.style.color='';}
+
+  const ed=document.getElementById('sum-diff');
+  if(actual200!=null&&projFinish!=null){
+    const s1=actual200,s2=projFinish-actual200,d=s2-s1;
+    ed.textContent=(d>=0?'+':'')+d.toFixed(2);
+    ed.style.color=d>4?'#f87171':d>2?'#fbbf24':'#e8eaf0';
+  }else{ed.textContent='—';ed.style.color='';}
+}
+
+function updateSplits(inputs,tsplits,target,tgt200,finishVal,projFinish,acp){
+  const grid=document.getElementById('splits-grid');grid.innerHTML='';
+  const tCP=calcCP(tsplits);
+  const t200ref=tCP.t200!=null?tCP.t200:tgt200;
+  const a200ref=acp.t200;
+  const rows=[
+    {label:'0 → 100m',      a:acp.t100,t:tCP.t100},
+    {label:'100m → 200m',   a:acp.t100!=null&&acp.t200!=null?acp.t200-acp.t100:null,t:tCP.t100!=null&&tCP.t200!=null?tCP.t200-tCP.t100:null},
+    {label:'200m → 300m',   a:acp.t200!=null&&acp.t300!=null?acp.t300-acp.t200:null,t:tCP.t200!=null&&tCP.t300!=null?tCP.t300-tCP.t200:null},
+    {label:'300m → Finish', a:acp.t300!=null&&projFinish!=null?projFinish-acp.t300:null,t:tCP.t300!=null?target-tCP.t300:null},
+    {label:'1st 200m',      a:a200ref,t:t200ref},
+    {label:'2nd 200m',      a:a200ref!=null&&projFinish!=null?projFinish-a200ref:null,t:target-t200ref},
+  ];
+  rows.forEach(r=>{
+    const card=document.createElement('div');card.className='scard';
+    let dHTML='';
+    if(r.a!=null&&r.t!=null){
+      const diff=r.a-r.t,sign=diff>=0?'+':'';
+      const bg=diff<-0.05?'rgba(74,222,128,0.15)':diff>0.05?'rgba(248,113,113,0.15)':'rgba(255,255,255,0.05)';
+      const col=diff<-0.05?'#4ade80':diff>0.05?'#f87171':'#555c72';
+      dHTML=`<span class="dbadge" style="background:${bg};color:${col}">${sign}${diff.toFixed(2)}</span>`;
+    }else{dHTML=`<div class="sc">target: ${r.t!=null?r.t.toFixed(2):'—'}</div>`;}
+    card.innerHTML=`<div class="sl">${r.label}</div><div class="sv">${r.a!=null?r.a.toFixed(2):'—'}</div>${dHTML}`;
+    grid.appendChild(card);
+  });
+}
+
+function updateVelChart(inputs,tsplits,target,finishVal){
+  const labels=['H1','H2','H3','H4','H5','H6','H7','H8','H9','H10','Fin'];
+  const tVels=buildVels([...tsplits,target]);
+  const lc=lastContiguous(inputs);
+  const aVels=new Array(11).fill(null);
+  if(lc>=0){
+    const slice=[...inputs.slice(0,lc+1)];
+    if(finishVal!=null&&lc===9)slice.push(finishVal);
+    const sv=buildVels(slice);
+    for(let i=0;i<sv.length;i++)aVels[i]=sv[i];
+  }
+  const allValid=[...tVels,...aVels].filter(v=>v!=null&&isFinite(v));
+  const rawMin=Math.min(...allValid),rawMax=Math.max(...allValid);
+  const yMin=parseFloat((Math.floor((rawMin-0.3)*10)/10).toFixed(1));
+  const yMax=parseFloat((Math.ceil((rawMax+0.3)*10)/10).toFixed(1));
+  if(velChart){
+    velChart.data.datasets[0].data=[...tVels];
+    velChart.data.datasets[1].data=[...aVels];
+    velChart.options.scales.y.min=yMin;velChart.options.scales.y.max=yMax;
+    velChart.update('none');return;
+  }
+  velChart=new Chart(document.getElementById('vel-chart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Target',data:[...tVels],borderColor:'#3f4558',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:3,pointBackgroundColor:'#3f4558',tension:0.3},
+      {label:'Actual',data:[...aVels],borderColor:'#4ade80',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#4ade80',tension:0.3,spanGaps:false}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+' m/s':'—'}`},backgroundColor:'#1f2435',titleColor:'#e8eaf0',bodyColor:'#8b90a0',borderColor:'#2a3048',borderWidth:1}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#555c72',font:{size:11,family:'DM Mono, monospace'}}},
+        y:{min:yMin,max:yMax,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#555c72',font:{size:11,family:'DM Mono, monospace'},callback:v=>v.toFixed(1)}}
+      }
+    }
+  });
+}
+
+function buildPaceGuide(){
+  const target=getPgTarget();
+  const data=genSplits(target,getPgModels(),getPgMid());
+  const{h,t200}=data;
+  document.getElementById('pg-label').textContent=target.toFixed(2);
+  const cp=calcCP(h);
+  const tbody=document.getElementById('pace-body');tbody.innerHTML='';
+  const rows=[];
+  for(let i=0;i<10;i++){
+    const interval=i===0?h[0]:h[i]-h[i-1];
+    const prevInterval=(i>=2)?(h[i-1]-h[i-2]):null;
+    rows.push({type:'h',label:'H'+(i+1),cumul:h[i],interval,prevInterval});
+    if(i===1&&cp.t100!=null)rows.push({type:'cp',label:'100m',cumul:cp.t100});
+    if(i===4&&cp.t200!=null)rows.push({type:'cp',label:'200m',cumul:cp.t200});
+    if(i===7&&cp.t300!=null)rows.push({type:'cp',label:'300m',cumul:cp.t300});
+  }
+  rows.push({type:'fin',label:'Finish',cumul:target,interval:target-h[9],prevInterval:null});
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    if(r.type==='cp'){
+      tr.className='cprow';
+      tr.innerHTML=`<td>${r.label}</td><td>${r.cumul.toFixed(2)}</td><td>—</td><td>—</td>`;
+    }else{
+      if(r.type==='fin')tr.className='finrow';
+      const change=r.prevInterval!=null?(r.interval-r.prevInterval):null;
+      const cs=change!=null?((change>=0?'+':'')+change.toFixed(2)):'—';
+      const cc=change!=null?(change>0.01?'#f87171':change<-0.01?'#4ade80':'#555c72'):'#555c72';
+      tr.innerHTML=`<td>${r.label}</td><td>${r.cumul.toFixed(2)}</td><td>${r.interval.toFixed(2)}</td><td style="color:${cc}">${cs}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+  buildPgChart(h,target);
+}
+
+function buildPgChart(h,target){
+  const labels=['H1','H2','H3','H4','H5','H6','H7','H8','H9','H10','Fin'];
+  const vels=buildVels([...h,target]);
+  const allV=vels.filter(v=>v!=null&&isFinite(v));
+  const yMin=parseFloat((Math.floor((Math.min(...allV)-0.3)*10)/10).toFixed(1));
+  const yMax=parseFloat((Math.ceil((Math.max(...allV)+0.3)*10)/10).toFixed(1));
+  const ds=[{label:'Target',data:vels,borderColor:'#60a5fa',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#60a5fa',tension:0.3}];
+  const opts={
+    responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+' m/s':'—'}`},backgroundColor:'#1f2435',titleColor:'#e8eaf0',bodyColor:'#8b90a0',borderColor:'#2a3048',borderWidth:1}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#555c72',font:{size:11,family:'DM Mono, monospace'}}},
+      y:{min:yMin,max:yMax,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#555c72',font:{size:11,family:'DM Mono, monospace'},callback:v=>v.toFixed(1)}}
+    }
+  };
+  if(pgChart){pgChart.options.scales.y.min=yMin;pgChart.options.scales.y.max=yMax;pgChart.data.datasets[0].data=vels;pgChart.update('none');return;}
+  pgChart=new Chart(document.getElementById('pg-chart'),{type:'line',data:{labels,datasets:ds},options:opts});
+}
+
+function clearAll(){
+  for(let i=0;i<10;i++){const el=document.getElementById('td-'+i);if(el)el.value='';}
+  const fe=document.getElementById('td-finish');if(fe)fe.value='';
+  recalc();
+}
+function saveRun(){
+  const inputs=getInputs(),finishVal=getFinish();
+  const nameEl=document.getElementById('save-name');
+  const name=nameEl.value.trim()||('Run '+new Date().toLocaleDateString());
+  saves.unshift({name,gender,pgGender,target:getTarget(),inputs,finishVal,strides:getStrides(),date:new Date().toISOString()});
+  if(saves.length>20)saves.pop();
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(saves));}catch(e){}
+  nameEl.value='';renderSaves();
+}
+function loadRun(idx){
+  const run=saves[idx];if(!run)return;
+  gender=run.gender||'M';pgGender=run.pgGender||run.gender||'M';
+  document.getElementById('btn-m').classList.toggle('active',gender==='M');
+  document.getElementById('btn-w').classList.toggle('active',gender==='W');
+  document.getElementById('pg-btn-m').classList.toggle('active',pgGender==='M');
+  document.getElementById('pg-btn-w').classList.toggle('active',pgGender==='W');
+  document.getElementById('target-input').value=run.target.toFixed(2);
+  buildStrideInputs(run.strides||getDefaults(gender).strides);
+  if(velChart){velChart.destroy();velChart=null;}
+  fullRebuild();
+  setTimeout(()=>{
+    for(let i=0;i<10;i++){
+      const el=document.getElementById('td-'+i);
+      if(el)el.value=run.inputs[i]!=null?run.inputs[i].toFixed(2):'';
+    }
+    const fe=document.getElementById('td-finish');
+    if(fe)fe.value=run.finishVal?run.finishVal.toFixed(2):'';
+    recalc();
+  },20);
+}
+function deleteRun(idx,e){
+  e.stopPropagation();saves.splice(idx,1);
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(saves));}catch(e){}
+  renderSaves();
+}
+function renderSaves(){
+  const list=document.getElementById('saves-list');
+  if(saves.length===0){list.innerHTML='<div class="empty-saves">No saved runs yet</div>';return;}
+  list.innerHTML=saves.map((s,i)=>{
+    const ft=s.finishVal?s.finishVal.toFixed(2):(s.inputs&&s.inputs[9]!=null?s.inputs[9].toFixed(2)+'*':'—');
+    return`<div class="save-item" onclick="loadRun(${i})">
+      <span class="sn">${s.name}</span>
+      <span class="sm">${s.gender} · ${new Date(s.date).toLocaleDateString()}</span>
+      <span class="st">${ft}</span>
+      <button class="db" onclick="deleteRun(${i},event)">✕</button>
+    </div>`;
+  }).join('');
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['calc','pace'][i]===tab));
+  document.getElementById('tab-calc').classList.toggle('active',tab==='calc');
+  document.getElementById('tab-pace').classList.toggle('active',tab==='pace');
+  if(tab==='pace')buildPaceGuide();
+}
+function fullRebuild(){
+  const target=getTarget();
+  const data=genSplits(target,getModels(),getMid());
+  buildTDBody(data.h,target);
+  recalc();
+}
+
+// Init
+const d=getDefaults(gender);
+buildStrideInputs(d.strides);
+document.getElementById('target-input').value=d.target.toFixed(2);
+fullRebuild();
+renderSaves();
+</script>
+</body>
+</html>
