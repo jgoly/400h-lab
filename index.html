@@ -379,7 +379,7 @@ body{min-height:100vh;padding-bottom:4rem;}
 </div>
 
 <footer class="site-footer">
-  Built for coaches and athletes &middot; Pacing data derived from publicly available biomechanical studies &middot;
+  Built for coaches and athletes &middot; Pacing data derived from SpeedEndurance.com &amp; IAAF biomechanical studies &middot;
   Men 45–70s · Women 49–80s
 </footer>
 
@@ -404,31 +404,31 @@ try{
 // H1 ratio corrected from real race biomechanics data
 // (SpeedEndurance table records H1 clearance time, not touchdown)
 const MEN_MODELS=[
-  [0.12371,-0.000234], // H1  ← corrected from Berlin 2009 + London DL 2017 race data
+  [0.12371,-0.000234], // H1  ← corrected from real race data (Berlin 2009 + London DL 2017)
   [0.20125,-0.000108], // H2
-  [0.28161, 0.000663], // H3
-  [0.36400, 0.001048], // H4
-  [0.44649, 0.000423], // H5
-  [0.48016, 0.000394], // 200m checkpoint
-  [0.53211, 0.000677], // H6
-  [0.61691, 0.001660], // H7
-  [0.70456, 0.001358], // H8
-  [0.79838, 0.001251], // H9
-  [0.89319, 0.001251], // H10
+  [0.28161,+0.000663], // H3
+  [0.36400,+0.001048], // H4
+  [0.44772,+0.000539], // H5  ← source table 51s row corrected (was transcription error)
+  [0.48016,+0.000394], // 200m checkpoint
+  [0.53284,+0.000747], // H6
+  [0.61789,+0.001753], // H7
+  [0.70652,+0.001545], // H8
+  [0.79888,+0.001298], // H9
+  [0.89221,+0.001157], // H10
 ];
 const MEN_MID=50.5;
 
 const WOMEN_MODELS=[
-  [0.11983,-0.000270], // H1  ← corrected proportionally
+  [0.11983,-0.000270], // H1  ← corrected proportionally from real race data
   [0.19804,-0.000054], // H2
-  [0.28050, 0.000162], // H3
-  [0.36274, 0.000235], // H4
-  [0.44474, 0.000334], // H5
-  [0.48519, 0.000118], // 200m checkpoint
-  [0.53215, 0.000403], // H6
-  [0.61911, 0.000384], // H7
-  [0.70782, 0.000206], // H8
-  [0.79877, 0.000003], // H9
+  [0.28050,+0.000162], // H3
+  [0.36274,+0.000235], // H4
+  [0.44695,+0.000334], // H5  ← source table 58s row corrected (H5 transcription error)
+  [0.48519,+0.000118], // 200m checkpoint
+  [0.53215,+0.000403], // H6
+  [0.61911,+0.000384], // H7
+  [0.70782,+0.000206], // H8
+  [0.79877,+0.000003], // H9
   [0.89167,-0.000151], // H10
 ];
 const WOMEN_MID=58.0;
@@ -445,6 +445,16 @@ function getBounds(g){return g==='M'?BOUNDS.M:BOUNDS.W;}
 function genSplits(target,models,mid){
   const vals=models.map(m=>parseFloat(((m[0]+m[1]*(target-mid))*target).toFixed(2)));
   const h=[vals[0],vals[1],vals[2],vals[3],vals[4],vals[6],vals[7],vals[8],vals[9],vals[10]];
+  // Enforce monotonically non-increasing velocity from H5 onward.
+  // The ratio model fits hurdles independently so tiny fit residuals can
+  // produce a near-invisible velocity bump at H7 (shifts of <0.15s).
+  // This constraint enforces the physical reality that athletes decelerate
+  // continuously from mid-race onward.
+  for(let i=5;i<10;i++){
+    const prev=h[i-1]-h[i-2];
+    const curr=h[i]-h[i-1];
+    if(curr<prev) h[i]=parseFloat((h[i-1]+prev).toFixed(2));
+  }
   return{h,t200:vals[5]};
 }
 
@@ -487,15 +497,23 @@ function projectFromHurdle(t_i,hIdx,models,mid){
 
 function projectFinish(inputs,finishVal,models,mid){
   if(finishVal!=null)return{val:finishVal,isProj:false,basedOn:-1};
-  let lc=-1;
-  for(let i=0;i<10;i++){if(inputs[i]!=null)lc=i;else break;}
-  if(lc<PROJ_MIN_HURDLE)return{val:null,isProj:false,basedOn:-1};
-  return{val:parseFloat(projectFromHurdle(inputs[lc],lc,models,mid).toFixed(2)),isProj:true,basedOn:lc+1};
+  // Use last non-null entry — allows projection from any single hurdle,
+  // not just from contiguous runs. H1 still suppressed (PROJ_MIN_HURDLE).
+  const ln=lastNonNull(inputs);
+  if(ln<PROJ_MIN_HURDLE)return{val:null,isProj:false,basedOn:-1};
+  return{val:parseFloat(projectFromHurdle(inputs[ln],ln,models,mid).toFixed(2)),isProj:true,basedOn:ln+1};
 }
 
+// lastContiguous: for velocity chart (can't draw gaps)
 function lastContiguous(inputs){
   let last=-1;
   for(let i=0;i<10;i++){if(inputs[i]!=null)last=i;else break;}
+  return last;
+}
+// lastNonNull: for projection (works from any single hurdle)
+function lastNonNull(inputs){
+  let last=-1;
+  for(let i=0;i<10;i++){if(inputs[i]!=null)last=i;}
   return last;
 }
 
@@ -662,12 +680,19 @@ function recalc(){
   }else if(iF){iF.textContent='—';dF.textContent='—';dF.className='delta neutral';}
 
   const{val:projFinish,isProj,basedOn}=projectFinish(inputs,finishVal,models,mid);
+  const ln=lastNonNull(inputs);
 
   const pb=document.getElementById('partial-banner');
-  if(lc>=0&&!finishVal){
+  if(ln>=0&&!finishVal){
     pb.style.display='block';
-    if(lc===0){pb.innerHTML='H1 entered. Projection available from H2 onward.';}
-    else{pb.innerHTML=`${lc<9?`Partial run — ${lc+1}/10 hurdles. `:''}Projected finish from H${basedOn}: <strong>${projFinish!=null?projFinish.toFixed(2)+'s':'—'}</strong>`;}
+    if(ln===0){
+      pb.innerHTML='H1 entered. Projection available from H2 onward.';
+    }else{
+      const isNonContiguous=lc<ln; // gap exists between last contiguous and last entry
+      const partialNote=lc<9?`Partial run — ${lc+1}/10 hurdles. `:'';
+      const nonContNote=isNonContiguous?` (H${lc+2}–H${ln} skipped)`:'';
+      pb.innerHTML=`${partialNote}Projected finish from H${basedOn}${nonContNote}: <strong>${projFinish!=null?projFinish.toFixed(2)+'s':'—'}</strong>`;
+    }
   }else{pb.style.display='none';}
 
   updateSummary(inputs,tsplits,target,tgt200,finishVal,projFinish,isProj,acp);
@@ -687,7 +712,7 @@ function updateSummary(inputs,tsplits,target,tgt200,finishVal,projFinish,isProj,
     const d=projFinish-target;
     efd.textContent=(d>=0?'+':'')+d.toFixed(2)+' vs target';
     colourSub(efd,d);
-  }else{ef.textContent='—';efd.textContent=lastContiguous(inputs)===0?'Enter H2+':'Enter splits';efd.style.color='';}
+  }else{ef.textContent='—';efd.textContent=lastNonNull(inputs)===0?'Enter H2+':'Enter splits';efd.style.color='';}
 
   const tCP=calcCP(tsplits);
   const actual200=acp.t200;
